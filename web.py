@@ -2,39 +2,14 @@
 
 from selenium import webdriver
 import time
-
+import io 
 #XPaths
 levelXPath = "//*[@id='row-move']/div[2]/div/div[4]/div[3]/div[4]/div/div/div"
 skillXPath = "//*[@id='row-move']/div[2]/div/div[4]/div[3]/div[5]/div/div"
 nameXPath = "//*[@id='row-move']/div[2]/div/div[2]/div/div/table[1]/tbody/tr[1]/th/div"
 #selenium driver
 ## use Chrome instead of PhantomJS for a faster speed
-
-
-#def readHtml():
-#    #todo: driver return a session. up to now don't know how to
-#    #      parse them. Another method is find all div but seems 
-#    #      stupid. Work on it later
-#    level = driver.find_element_by_xpath(levelXPath)    
-#    for img in soup.find_all("img"):
-#        print (img.get("src"))
-#
-#def getHtml():
-#    for i in range(1,2):
-#        driver.get("http://fgowiki.com/guide/petdetail/" + str(i))    
-#        time.sleep(3)
-#        readHtml()
-#        
-    #find element by class name   
-    #   breakdata = driver.find_element_by_class_name("break-databox")
-    #save the html stand alone. DONE.
-    #   a = open(str(i) + ".html", "wb")
-    #   a.write(driver.page_source.encode('gbk', 'ignore'))
-    #   a.flush()
-    #   a.close()
-    #   driver.get_screenshot_as_file(str(i) + ".jpg")
-    
-#    driver.close()   
+ 
     
 def getHeroName(driver):
     name = driver.find_element_by_xpath(nameXPath).text
@@ -88,6 +63,8 @@ if __name__ == '__main__':
     driver.get("http://fgowiki.com/guide/petdetail/2")
     time.sleep(3)
     
+    a = io.open('FGO.csv', 'w', encoding = 'utf-8')
+    
     #2. get the hero info
     #2.1 get hero name
     name = getHeroName(driver)
@@ -102,18 +79,28 @@ if __name__ == '__main__':
     
     driver.close()
     driver.quit()
-    
+            
     print 'Hero Name is: ', name
     print 'skill\n'
     for key, value in skillInfo.items():
-        for v in value.items():            
-            print key, ' ', v, '\n'
+        for v in value.items():      
+            skillStr = name + ',skill,' + key + ',' + v[0] + ',' + v[1] + '\n'
+#            print skillStr
+            a.write(skillStr)
+#            a.write(unicode(skillStr, "utf-8"))
+            a.flush()
+#            print key, ' ', v, '\n'
     
     print 'level\n'   
     for key, value in levelInfo.items(): 
-        for v in value.items():            
-            print key, ' ', v, '\n'
-        
+        for v in value.items():    
+            levelStr = name + ',level,' + key + ',' + v[0] + ',' + v[1] + '\n'
+#            print levelStr
+            a.write(levelStr)
+#            a.writeline(unicode(levelStr, "utf-8"))
+            a.flush()
+#            print key, ' ', v, '\n'
+    a.close()    
     print 'FGO'
 
 
