@@ -4,8 +4,6 @@ from selenium import webdriver
 import time
 import io 
 import os
-import threading
-
 #XPaths
 
 #selenium driver
@@ -38,43 +36,49 @@ class GetAnFGOHero():
         
     def getHeroLevelUp(self, )    :
         levelInfoDict = {}
-        levelElement = self.driver.find_element_by_xpath(self.levelXPath)
-        levels = levelElement.find_elements_by_class_name('cf')
-        i = 1
-        for level in levels:
-            nextButton = level.find_element_by_xpath(self.levelXPath + '/div[' + str(i) + ']/div[2]')
-            lv = level.find_element_by_class_name('lv').text        
-            items = level.find_elements_by_tag_name('li')
-            itemsDict = {}
-            for item in items:
-                itemCount = item.find_element_by_class_name('ItemGroupNum').text
-                itemName = item.find_element_by_tag_name('img').get_attribute('src')
-                itemsDict[itemName] = itemCount            
-            levelInfoDict[lv] = itemsDict     
-            i = i + 1  
-            nextButton.click() 
-        
-        self.levelInfoDict = levelInfoDict
+        try:
+            levelElement = self.driver.find_element_by_xpath(self.levelXPath)
+            levels = levelElement.find_elements_by_class_name('cf')
+            i = 1
+            for level in levels:
+                nextButton = level.find_element_by_xpath(self.levelXPath + '/div[' + str(i) + ']/div[2]')
+                lv = level.find_element_by_class_name('lv').text        
+                items = level.find_elements_by_tag_name('li')
+                itemsDict = {}
+                for item in items:
+                    itemCount = item.find_element_by_class_name('ItemGroupNum').text
+                    itemName = item.find_element_by_tag_name('img').get_attribute('src')
+                    itemsDict[itemName] = itemCount            
+                levelInfoDict[lv] = itemsDict     
+                i = i + 1  
+                nextButton.click() 
+        except:
+            self.levelInfoDict = levelInfoDict
+        finally:
+            self.levelInfoDict = levelInfoDict
         
     def getHeroSkillUp(self, )    :
         skillupInfoDict = {}
-        skillElement = self.driver.find_element_by_xpath(self.skillXPath)
-        skills = skillElement.find_elements_by_class_name('cf')    
-        i = 1
-        for skill in skills:
-            nextButton = skill.find_element_by_xpath(self.skillXPath + '/div[' + str(i) + ']/div[2]')
-            lv = skill.find_element_by_class_name('lv').text     
-            items = skill.find_elements_by_tag_name('li')
-            itemsDict = {}
-            for item in items:
-                itemCount = item.find_element_by_class_name('ItemGroupNum').text
-                itemName = item.find_element_by_tag_name('img').get_attribute('src')
-                itemsDict[itemName] = itemCount            
-            skillupInfoDict[lv] = itemsDict   
-            i = i + 1       
-            nextButton.click()   
-            
-        self.skillInfoDict = skillupInfoDict
+        try:
+            skillElement = self.driver.find_element_by_xpath(self.skillXPath)
+            skills = skillElement.find_elements_by_class_name('cf')    
+            i = 1
+            for skill in skills:
+                nextButton = skill.find_element_by_xpath(self.skillXPath + '/div[' + str(i) + ']/div[2]')
+                lv = skill.find_element_by_class_name('lv').text     
+                items = skill.find_elements_by_tag_name('li')
+                itemsDict = {}
+                for item in items:
+                    itemCount = item.find_element_by_class_name('ItemGroupNum').text
+                    itemName = item.find_element_by_tag_name('img').get_attribute('src')
+                    itemsDict[itemName] = itemCount            
+                skillupInfoDict[lv] = itemsDict   
+                i = i + 1       
+                nextButton.click()   
+        except:
+            self.skillInfoDict = skillupInfoDict
+        finally:    
+            self.skillInfoDict = skillupInfoDict
     
 
     def getAnHeroInfo(self, serialNum)        :
@@ -93,9 +97,8 @@ class GetAnFGOHero():
         #2. get all the info
         self.getHeroLevelUp()
         self.getHeroSkillUp()
-        self.driver.close()
-        self.driver.quit()
-        b = io.open('FGO.csv', 'a', encoding = 'utf-8')
+        filename = 'FGO_' + str(serialNum) + '.csv'
+        b = io.open(filename, 'a', encoding = 'utf-8')
         for key, value in self.skillInfoDict.items():
              for v in value.items():   
                  skillStr = str(serialNum) + ',skill,' + key + ',' + os.path.splitext(os.path.split(v[0])[1])[0] + ',' + v[1] + '\n'
@@ -110,72 +113,57 @@ class GetAnFGOHero():
         
         b.flush()
         b.close()
-        print self.name, ' finish.'
+#        print self.name, ' finish.'
+        print str(serialNum), ' finish.'
         
-        
+    def quitDriver(self,):
+        self.driver.close()
+        self.driver.quit()
+
+#=====================
+import Queue    
+
+clawClassQueue = Queue.Queue(maxsize=10)
+classNum=2
+driverType='chrome'
+
+def beforeBegin():
+    global clawClassQueue
+    for i in range(1, classNum + 1):
+        newClawClass = GetAnFGOHero(driverType)    
+        clawClassQueue.put(newClawClass)
+    
 def getHero(index)        :
-    newClassTest = GetAnFGOHero('chrome')
+    global clawClassQueue
+    if clawClassQueue.empty() is True:  
+        print 'Zzz...'          
+        time.sleep(5000)
+        
+    newClassTest = clawClassQueue.get()
     newClassTest.getAnHeroInfo(index)
+    clawClassQueue.put(newClassTest)
+    
+def quitAllClass():
+    global clawClassQueue
+    while clawClassQueue.empty() is not True:
+        newClassTest = clawClassQueue.get()
+        newClassTest.quitDriver()          
+
         
 if __name__ == '__main__':
-#    threads = []
-#    for i in range(5):
-#        t = threading.Thread(target=getHero, args=(i,))
-#        threads.append(t)
-#        
-#    for tt in threads:
-#        tt.setDaemon(True)        
-#        tt.start()
-#        tt.join()
-        
-    getHero(3)
-#    #main 
-#    #1. init a driver
-#    driver = webdriver.PhantomJS(executable_path="phantomjs.exe")
-#    driver.get("http://fgowiki.com/guide/petdetail/2")
-#    time.sleep(3)
+    from contextlib import closing
+    from multiprocessing import Pool
+     
+#    newClaw.tryGet()
+#    newClaw.getHero(3)
+    beforeBegin()
+    for i in range(1,8):
+        getHero(i)
+    quitAllClass()
+#    while clawClassQueue.empty() is not True:
+#        print 'Zzz...'
+#        clawClassQueue.get()
+#    with closing(Pool(processes=4)) as pool:
+#        pool.map(getHero, range(1,3))
 #    
-#    a = io.open('FGO.csv', 'w', encoding = 'utf-8')
-#    
-#    #2. get the hero info
-#    #2.1 get hero name
-#    name = getHeroName(driver)
-#    
-#    #2.2 get hero level up
-#    levelInfo = getHeroLevelUp(driver)
-##    levelInfo = sorted(levelInfo.iteritems(), key=lambda d:d[0]) 
-#    
-#    #2.3 get hero skill up
-#    skillInfo = getHeroSkillUp(driver)
-##    skillInfo = sorted(skillInfo.iteritems(), key=lambda d:d[0]) 
-#    
-#    driver.close()
-#    driver.quit()
-#            
-#    print 'Hero Name is: ', name
-#    print 'skill\n'
-#    for key, value in skillInfo.items():
-#        for v in value.items():      
-#            skillStr = name + ',skill,' + key + ',' + v[0] + ',' + v[1] + '\n'
-##            print skillStr
-#            a.write(skillStr)
-##            a.write(unicode(skillStr, "utf-8"))
-#            a.flush()
-##            print key, ' ', v, '\n'
-#    
-#    print 'level\n'   
-#    for key, value in levelInfo.items(): 
-#        for v in value.items():    
-#            levelStr = name + ',level,' + key + ',' + v[0] + ',' + v[1] + '\n'
-##            print levelStr
-#            a.write(levelStr)
-##            a.writeline(unicode(levelStr, "utf-8"))
-#            a.flush()
-##            print key, ' ', v, '\n'
-#    a.close()    
-#    print 'FGO'
-
-
-    
-
- 
+#    quitAllClass()
