@@ -113,7 +113,6 @@ class GetAnFGOHero():
         
         b.flush()
         b.close()
-#        print self.name, ' finish.'
         print str(serialNum), ' finish.'
         
     def quitDriver(self,):
@@ -122,48 +121,52 @@ class GetAnFGOHero():
 
 #=====================
 import Queue    
-
+import threading  
 clawClassQueue = Queue.Queue(maxsize=10)
-classNum=2
 driverType='chrome'
+lock = threading.Lock()
+count = 0
 
-def beforeBegin():
+def beforeBegin(classNum=4):
     global clawClassQueue
     for i in range(1, classNum + 1):
         newClawClass = GetAnFGOHero(driverType)    
         clawClassQueue.put(newClawClass)
     
 def getHero(index)        :
-    global clawClassQueue
-    if clawClassQueue.empty() is True:  
+    global clawClassQueue    
+    global count
+    global lock
+    while clawClassQueue.empty() is True:  
         print 'Zzz...'          
-        time.sleep(5000)
-        
+        time.sleep(30)
+    t1 = time.time()
     newClassTest = clawClassQueue.get()
-    newClassTest.getAnHeroInfo(index)
+    newClassTest.getAnHeroInfo(index)    
     clawClassQueue.put(newClassTest)
+    t2 = time.time()
+    print str(index), ' ', str(t2-t1)
+    count = count + 1
+    if count == 149:
+        lock.release()
+        
     
 def quitAllClass():
-    global clawClassQueue
+    global clawClassQueue  
+    global lock
+    lock.acquire()
     while clawClassQueue.empty() is not True:
         newClassTest = clawClassQueue.get()
-        newClassTest.quitDriver()          
+        newClassTest.quitDriver()    
+    lock.release()
 
         
 if __name__ == '__main__':
-    from contextlib import closing
-    from multiprocessing import Pool
-     
-#    newClaw.tryGet()
-#    newClaw.getHero(3)
-    beforeBegin()
-    for i in range(1,8):
-        getHero(i)
-    quitAllClass()
-#    while clawClassQueue.empty() is not True:
-#        print 'Zzz...'
-#        clawClassQueue.get()
-#    with closing(Pool(processes=4)) as pool:
-#        pool.map(getHero, range(1,3))
-#    
-#    quitAllClass()
+    try:
+        beforeBegin(classNum=8)
+        lock.acquire()
+        for i in range(1,150):
+            t = threading.Thread(target=getHero, args=(i,))
+            t.start()
+    finally:
+        quitAllClass()
