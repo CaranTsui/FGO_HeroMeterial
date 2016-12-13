@@ -118,7 +118,22 @@ class GetAnFGOHero():
     def quitDriver(self,):
         self.driver.close()
         self.driver.quit()
-
+        
+    def getAMaterialInfo(self, serialNum):
+        if self.driver is None:
+            return 
+            
+        self.driver.get('http://fgowiki.com/guide/materialdetail/' + str(serialNum))
+        fullmaterialName = self.driver.find_element_by_xpath("//div[@class='leftico']").find_element_by_tag_name('img').get_attribute('src')
+        materialName = os.path.splitext(os.path.split(fullmaterialName)[1])[0]
+        materialChName = self.driver.find_element_by_xpath("//div[@class='textsmall itemname']").text
+        materialStr = str(serialNum) + ',' +  materialName + ',' + materialChName + '\n'
+        a = io.open('FGOMaterial.csv', 'a', encoding = 'utf-8')
+        a.write(materialStr)
+        a.flush()
+        a.close()
+        
+        
 #=====================
 import Queue    
 import threading  
@@ -127,7 +142,7 @@ driverType='chrome'
 lock = threading.Lock()
 count = 0
 
-def beforeBegin(classNum=4):
+def beforeBegin(classNum = 4):
     global clawClassQueue
     for i in range(1, classNum + 1):
         newClawClass = GetAnFGOHero(driverType)    
@@ -150,6 +165,22 @@ def getHero(index)        :
     if count == 149:
         lock.release()
         
+def getMaterial(index):
+    global clawClassQueue 
+#    global count
+    while clawClassQueue.empty() is True:  
+        print 'Zzz...'          
+        time.sleep(30)
+        
+    t1 = time.time()
+    newClassTest = clawClassQueue.get()
+    newClassTest.getAMaterialInfo(index)    
+    clawClassQueue.put(newClassTest)
+    t2 = time.time()
+    print 'Material ', str(index), ' ', str(t2-t1)
+#    count = count + 1
+#    if count == 74:
+#        lock.release()
     
 def quitAllClass():
     global clawClassQueue  
@@ -163,8 +194,12 @@ def quitAllClass():
         
 if __name__ == '__main__':
     try:
-        beforeBegin(classNum=8)
+        beforeBegin(classNum=4)
         lock.acquire()
+        for i in range(1,75):
+            t = threading.Thread(target=getMaterial, args=(i,))
+            t.start()
+            
         for i in range(1,150):
             t = threading.Thread(target=getHero, args=(i,))
             t.start()
