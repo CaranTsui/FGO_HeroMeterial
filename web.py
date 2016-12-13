@@ -1,5 +1,11 @@
 #coding=utf-8
 
+"""
+Created on Mon Nov 14 17:48:27 2016
+
+@author: Caran
+"""
+
 from selenium import webdriver
 import time
 import io 
@@ -32,9 +38,15 @@ class GetAnFGOHero():
            self.driver = webdriver.PhantomJS(executable_path="phantomjs.exe")
      
     def getHeroName(self, ):
+        '''
+        Get the name of the hero.
+        '''
         self.name = self.driver.find_element_by_xpath(self.nameXPath).text        
         
     def getHeroLevelUp(self, )    :
+        '''
+        Get the levelup material the hero needs.
+        '''
         levelInfoDict = {}
         try:
             levelElement = self.driver.find_element_by_xpath(self.levelXPath)
@@ -58,6 +70,9 @@ class GetAnFGOHero():
             self.levelInfoDict = levelInfoDict
         
     def getHeroSkillUp(self, )    :
+        '''
+        Get the skillup material the hero needs.
+        '''
         skillupInfoDict = {}
         try:
             skillElement = self.driver.find_element_by_xpath(self.skillXPath)
@@ -82,6 +97,10 @@ class GetAnFGOHero():
     
 
     def getAnHeroInfo(self, serialNum)        :
+        '''
+        Get the specific hero detail.
+        serialNum: the hero index in fgowiki.com
+        '''
         if self.driver is None:
             return 
             
@@ -116,17 +135,30 @@ class GetAnFGOHero():
         print str(serialNum), ' finish.'
         
     def quitDriver(self,):
+        '''
+        Delete driver(closing the web browser).
+        '''
         self.driver.close()
         self.driver.quit()
         
     def getAMaterialInfo(self, serialNum):
+        '''
+        Get the specific material detail.
+        '''
         if self.driver is None:
             return 
             
         self.driver.get('http://fgowiki.com/guide/materialdetail/' + str(serialNum))
+        #full name, the full pic link of the material
         fullmaterialName = self.driver.find_element_by_xpath("//div[@class='leftico']").find_element_by_tag_name('img').get_attribute('src')
+
+        #name, cut the main part of the pic url as the material name
         materialName = os.path.splitext(os.path.split(fullmaterialName)[1])[0]
+
+        #CHNname/JPNname, get the name of the material        
         materialChName = self.driver.find_element_by_xpath("//div[@class='textsmall itemname']").text
+        
+        #write it down
         materialStr = str(serialNum) + ',' +  materialName + ',' + materialChName + '\n'
         a = io.open('FGOMaterial.csv', 'a', encoding = 'utf-8')
         a.write(materialStr)
@@ -168,6 +200,7 @@ def getHero(index)        :
 def getMaterial(index):
     global clawClassQueue 
 #    global count
+#    global lock
     while clawClassQueue.empty() is True:  
         print 'Zzz...'          
         time.sleep(30)
