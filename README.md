@@ -7,5 +7,4 @@ A simply tool to crawler some data about the FGO heros and what meterial they ne
 ## Before Running the Script
 You might have to prepare these tools:
 - selenium [selenium with a Chrome Driver](http://www.seleniumhq.org/download/)
-- BeautifulSoup [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/)
 
